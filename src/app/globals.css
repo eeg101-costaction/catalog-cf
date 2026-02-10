@@ -119,7 +119,7 @@ button {
   align-items: center;
   flex-wrap: wrap;
   gap: 1rem;
-  padding: 1rem 20px;
+  padding: 1rem 20px 1rem 0;
   background-color: #fff;
 }
 
