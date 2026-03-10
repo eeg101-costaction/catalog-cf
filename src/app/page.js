@@ -48,7 +48,7 @@ export default function HomePage() {
               href="/resources?section=part3"
             />
           </div>
-          <TextSection subtitle="A community framework invites the community to commit to and adopt these principles in their daily practices." />
+          <TextSection subtitle="The community framework invites the community to commit to and adopt these principles in their daily practices." />
         </div>
       </div>
     </div>
