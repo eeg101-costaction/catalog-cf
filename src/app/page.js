@@ -35,9 +35,18 @@ export default function HomePage() {
             className="grid grid-cols-1 md:grid-cols-3 gap-6 px-20 mb-8 mx-auto"
             style={{ maxWidth: "var(--container-max)" }}
           >
-            <InformationCard content="Ensuring scientific validity" />
-            <InformationCard content="Promoting open access to knowledge" />
-            <InformationCard content="Fostering social and environmental responsibility" />
+            <InformationCard
+              content="Validity"
+              href="/resources?section=part1"
+            />
+            <InformationCard
+              content="Democratisation"
+              href="/resources?section=part2"
+            />
+            <InformationCard
+              content="Responsibility"
+              href="/resources?section=part3"
+            />
           </div>
           <TextSection subtitle="A community framework invites the community to commit to and adopt these principles in their daily practices." />
         </div>

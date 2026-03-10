@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useMemo, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import SearchBar from "@/components/ui/SearchBar";
 import { FilterSidebar } from "./FilterSidebar";
 import { ResourceCard } from "./ResourceCard";
@@ -18,6 +18,8 @@ function filterResources(resources, activeFilters) {
 
 export function ResourcesPageClient({ initialResources }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const hasInitializedFiltersFromUrl = useRef(false);
   const [activeFilters, setActiveFilters] = useState({
     frameworkSections: [],
     types: [],
@@ -26,6 +28,55 @@ export function ResourcesPageClient({ initialResources }) {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  useEffect(() => {
+    if (hasInitializedFiltersFromUrl.current) {
+      return;
+    }
+
+    const sectionFromAlias = searchParams.get("section");
+    const sectionFromQuery = searchParams.getAll("frameworkSection");
+
+    const allSections = Array.from(
+      new Set(
+        initialResources.flatMap((resource) =>
+          Array.isArray(resource.manifestoPart)
+            ? resource.manifestoPart
+            : resource.manifestoPart
+              ? [resource.manifestoPart]
+              : []
+        )
+      )
+    );
+
+    let sectionsFromUrl = [];
+
+    if (sectionFromQuery.length > 0) {
+      sectionsFromUrl = sectionFromQuery.filter((section) =>
+        allSections.includes(section)
+      );
+    } else {
+      const aliasToPattern = {
+        part1: /^Part\s*1\b/i,
+        part2: /^Part\s*2\b/i,
+        part3: /^Part\s*3\b/i,
+      };
+
+      const pattern = aliasToPattern[(sectionFromAlias || "").toLowerCase()];
+      if (pattern) {
+        sectionsFromUrl = allSections.filter((section) => pattern.test(section));
+      }
+    }
+
+    if (sectionsFromUrl.length > 0) {
+      setActiveFilters((previous) => ({
+        ...previous,
+        frameworkSections: sectionsFromUrl,
+      }));
+    }
+
+    hasInitializedFiltersFromUrl.current = true;
+  }, [searchParams, initialResources]);
 
   // Force refresh data from Zotero
   const handleRefresh = useCallback(async () => {
