@@ -2,7 +2,7 @@
 
 A Next.js-based resource catalog for the EEG101 Community Framework, featuring direct integration with Zotero API for managing and displaying educational resources.
 
-🌐 **Live Site**: [https://eeg101-zeta.vercel.app/](https://eeg101-zeta.vercel.app/)
+🌐 **Live Site**: <https://catalog-cf.eeg101.eu>
 
 ## Overview
 
@@ -83,19 +83,19 @@ const COLLECTION_KEYS = ["F9DNTXQA", "ZD2RV8H9", "L72L5WAP"];
 ```
 eeg101-CF-catalog/
 ├── src/
-│   ├── app/                    # Next.js App Router pages
-│   │   ├── resources/         # Resources catalog with ISR
-│   │   ├── about/             # About page
-│   │   └── api/               # API routes (optional)
-│   ├── components/            # React components
+│   ├── app/                  # Next.js App Router pages
+│   │   ├── resources/        # Resources catalog with ISR
+│   │   ├── about/            # About page
+│   │   └── api/              # API routes (optional)
+│   ├── components/           # React components
 │   │   ├── Layout/           # Header, Footer
 │   │   ├── Resources/        # Resource cards, filters, details
-│   │   └── ui/              # Reusable UI components
+│   │   └── ui/               # Reusable UI components
 │   └── lib/                  # Backend logic
-│       ├── zotero/          # Zotero API integration
-│       └── filterUtils.js   # Filter logic
+│       ├── zotero/           # Zotero API integration
+│       └── filterUtils.js    # Filter logic
 ├── public/                   # Static assets
-└── .env.local               # Environment variables (not committed)
+└── .env.local                # Environment variables (not committed)
 ```
 
 ## Documentation
