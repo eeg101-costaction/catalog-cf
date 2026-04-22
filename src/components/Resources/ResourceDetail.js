@@ -180,6 +180,26 @@ export default function ResourceDetail({ resource }) {
             </div>
           )}
 
+          {/* URL if present and different from DOI */}
+          {resource.url && resource.url !== resource.doi && (
+            <div
+              className="mb-4 break-all"
+              style={{
+                fontSize: "var(--font-size-small)",
+                color: "var(--text-link)",
+              }}
+            >
+              <a
+                href={resource.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ textDecoration: "underline" }}
+              >
+                {resource.url}
+              </a>
+            </div>
+          )}
+
           {/* Tags Container */}
           <div className="flex gap-3 flex-wrap items-center mb-6">
             {/* Resource Type Tag */}
