@@ -147,7 +147,7 @@ export const ResourceCard = React.memo(function ResourceCard({ resource }) {
               {orderedTags.slice(0, 5).map((tag, idx) => (
                 <Link
                   key={idx}
-                  href={`/resources?search=${encodeURIComponent(tag)}`}
+                  href={`/resources?tag=${encodeURIComponent(tag)}`}
                   onClick={(e) => e.stopPropagation()}
                   className="inline-flex items-center px-3 py-1.5 rounded-full whitespace-nowrap hover:opacity-80 transition-opacity"
                   style={{

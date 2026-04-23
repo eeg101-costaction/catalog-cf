@@ -25,6 +25,7 @@ export function ResourcesPageClient({ initialResources }) {
     frameworkSections: [],
     types: [],
     languages: [],
+    tags: [],
   });
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -38,6 +39,22 @@ export function ResourcesPageClient({ initialResources }) {
     } else if (hasInitializedSearchFromUrl.current) {
       // Only clear search if we've been initialized and search param is removed
       setSearchQuery("");
+    }
+
+    // Get tag filters from URL
+    const tagsFromUrl = searchParams.getAll("tag");
+    if (tagsFromUrl.length > 0) {
+      const decodedTags = tagsFromUrl.map((tag) => decodeURIComponent(tag));
+      setActiveFilters((prev) => ({
+        ...prev,
+        tags: decodedTags,
+      }));
+    } else if (hasInitializedSearchFromUrl.current) {
+      // Clear tags if no tag params
+      setActiveFilters((prev) => ({
+        ...prev,
+        tags: [],
+      }));
     }
 
     hasInitializedSearchFromUrl.current = true;

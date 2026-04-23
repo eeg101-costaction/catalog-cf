@@ -74,5 +74,18 @@ export function matchesFilters(resource, activeFilters) {
     }
   }
 
+  // Tag filter
+  if (activeFilters.tags?.length > 0) {
+    const resourceTags = resource.tags || [];
+    const hasMatchingTag = activeFilters.tags.some((filterTag) =>
+      resourceTags.some(
+        (resourceTag) =>
+          resourceTag.toLowerCase() === filterTag.toLowerCase(),
+      ),
+    );
+
+    if (!hasMatchingTag) return false;
+  }
+
   return true;
 }

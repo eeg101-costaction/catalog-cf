@@ -235,7 +235,7 @@ export default function ResourceDetail({ resource }) {
                 {resource.tags.slice(0, 10).map((tag, idx) => (
                   <Link
                     key={idx}
-                    href={`/resources?search=${encodeURIComponent(tag)}`}
+                    href={`/resources?tag=${encodeURIComponent(tag)}`}
                     className="inline-flex items-center px-3 py-1.5 rounded-full whitespace-nowrap hover:opacity-80 transition-opacity"
                     style={{
                       background: "var(--surface-secondary)",
