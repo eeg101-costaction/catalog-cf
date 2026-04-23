@@ -117,8 +117,11 @@ export function ResourcesPageClient({ initialResources }) {
         const abstractMatch = resource.abstract
           ?.toLowerCase()
           .includes(lowerQuery);
+        const tagsMatch = resource.tags?.some((tag) =>
+          tag.toLowerCase().includes(lowerQuery),
+        );
 
-        return titleMatch || creatorsMatch || abstractMatch;
+        return titleMatch || creatorsMatch || abstractMatch || tagsMatch;
       });
     }
 
