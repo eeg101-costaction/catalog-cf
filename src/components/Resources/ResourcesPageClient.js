@@ -32,13 +32,12 @@ export function ResourcesPageClient({ initialResources }) {
 
   // Initialize search query from URL parameters
   useEffect(() => {
-    if (hasInitializedSearchFromUrl.current) {
-      return;
-    }
-
     const searchFromUrl = searchParams.get("search");
     if (searchFromUrl) {
       setSearchQuery(decodeURIComponent(searchFromUrl));
+    } else if (hasInitializedSearchFromUrl.current) {
+      // Only clear search if we've been initialized and search param is removed
+      setSearchQuery("");
     }
 
     hasInitializedSearchFromUrl.current = true;
