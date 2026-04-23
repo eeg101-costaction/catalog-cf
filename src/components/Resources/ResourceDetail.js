@@ -2,6 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Tags from "../ui/Tags";
 import { OriginSourceButton, SignPledgeButton, ZoteroLinkButton } from "../ui/Button";
@@ -230,12 +231,39 @@ export default function ResourceDetail({ resource }) {
 
             {/* Content Tags */}
             {resource.tags && resource.tags.length > 0 && (
-              <Tags
-                labels={resource.tags}
-                variant="framework"
-                textSize="caption"
-                maxTags={10}
-              />
+              <div className="flex gap-3 flex-wrap items-center">
+                {resource.tags.slice(0, 10).map((tag, idx) => (
+                  <Link
+                    key={idx}
+                    href={`/resources?search=${encodeURIComponent(tag)}`}
+                    className="inline-flex items-center px-3 py-1.5 rounded-full whitespace-nowrap hover:opacity-80 transition-opacity"
+                    style={{
+                      background: "var(--surface-secondary)",
+                      border: "var(--separator-light)",
+                      color: "var(--text-quaternary)",
+                      fontSize: "var(--font-size-caption)",
+                      fontWeight: 550,
+                    }}
+                    title={tag}
+                  >
+                    {tag}
+                  </Link>
+                ))}
+                {resource.tags.length > 10 && (
+                  <span
+                    className="px-2 rounded-full"
+                    style={{
+                      background: "var(--surface-secondary)",
+                      border: "var(--separator-light)",
+                      color: "var(--text-quaternary)",
+                      fontSize: "var(--font-size-caption)",
+                      fontWeight: 550,
+                    }}
+                  >
+                    …
+                  </span>
+                )}
+              </div>
             )}
           </div>
         </header>

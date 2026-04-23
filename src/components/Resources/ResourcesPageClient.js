@@ -20,6 +20,7 @@ export function ResourcesPageClient({ initialResources }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const hasInitializedFiltersFromUrl = useRef(false);
+  const hasInitializedSearchFromUrl = useRef(false);
   const [activeFilters, setActiveFilters] = useState({
     frameworkSections: [],
     types: [],
@@ -28,6 +29,20 @@ export function ResourcesPageClient({ initialResources }) {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Initialize search query from URL parameters
+  useEffect(() => {
+    if (hasInitializedSearchFromUrl.current) {
+      return;
+    }
+
+    const searchFromUrl = searchParams.get("search");
+    if (searchFromUrl) {
+      setSearchQuery(decodeURIComponent(searchFromUrl));
+    }
+
+    hasInitializedSearchFromUrl.current = true;
+  }, [searchParams]);
 
   useEffect(() => {
     if (hasInitializedFiltersFromUrl.current) {

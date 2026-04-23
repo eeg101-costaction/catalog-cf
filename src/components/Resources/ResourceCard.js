@@ -1,6 +1,6 @@
 import React from "react";
 import Tags from "../ui/Tags";
-import Link from "next/link"; // Use Next.js Link
+import Link from "next/link";
 import Image from "next/image";
 
 export const ResourceCard = React.memo(function ResourceCard({ resource }) {
@@ -143,13 +143,40 @@ export const ResourceCard = React.memo(function ResourceCard({ resource }) {
             />
           )}
           {orderedTags.length > 0 ? (
-            <Tags
-              labels={orderedTags}
-              variant="framework"
-              textSize="label-tertiary"
-              className="truncate"
-              maxTags={5}
-            />
+            <div className="flex flex-nowrap gap-2 min-w-0 truncate">
+              {orderedTags.slice(0, 5).map((tag, idx) => (
+                <Link
+                  key={idx}
+                  href={`/resources?search=${encodeURIComponent(tag)}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="inline-flex items-center px-3 py-1.5 rounded-full whitespace-nowrap hover:opacity-80 transition-opacity"
+                  style={{
+                    background: "var(--surface-secondary)",
+                    border: "var(--separator-light)",
+                    color: "var(--text-quaternary)",
+                    fontSize: "var(--font-size-caption)",
+                    fontWeight: 550,
+                  }}
+                  title={tag}
+                >
+                  {tag}
+                </Link>
+              ))}
+              {orderedTags.length > 5 && (
+                <span
+                  className="px-2 rounded-full"
+                  style={{
+                    background: "var(--surface-secondary)",
+                    border: "var(--separator-light)",
+                    color: "var(--text-quaternary)",
+                    fontSize: "var(--font-size-small)",
+                    fontWeight: 600,
+                  }}
+                >
+                  …
+                </span>
+              )}
+            </div>
           ) : (
             <div />
           )}
