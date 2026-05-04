@@ -131,46 +131,65 @@ const ActiveFilterChip = ({ label, onRemove }) => (
   </div>
 );
 
-export function FilterSidebar({ resources, activeFilters, onFilterChange }) {
-  // Calculate available filter options from resources
+export function FilterSidebar({ resources, countResources, activeFilters, onFilterChange, onClearAll }) {
+  // The resource list used for counting. Falls back to all resources when not provided.
+  const countBase = countResources || resources;
+
+  // Available filter options (keys/labels) — always derived from the full resource list
+  // so that options are never hidden just because they're filtered out.
   const filterOptions = React.useMemo(() => {
     const frameworkSections = new Set();
-    const types = new Map();
-    const languages = new Map();
+    const types = new Set();
+    const languages = new Set();
 
     resources.forEach((resource) => {
-      // Framework Sections (manifestoPart)
       if (resource.manifestoPart) {
         const parts = Array.isArray(resource.manifestoPart)
           ? resource.manifestoPart
           : [resource.manifestoPart];
         parts.forEach((part) => frameworkSections.add(part));
       }
-
-      // Types
-      if (resource.type) {
-        types.set(resource.type, (types.get(resource.type) || 0) + 1);
-      }
-
-      // Languages (from programmingLanguage field)
+      if (resource.type) types.add(resource.type);
       const lang = resource.language || "Unknown";
-      languages.set(lang, (languages.get(lang) || 0) + 1);
+      languages.add(lang);
     });
 
     return {
       frameworkSections: Array.from(frameworkSections).sort(),
-      types: Array.from(types.entries())
-        .sort((a, b) => b[1] - a[1])
-        .map(([type, count]) => ({ type, count })),
-      languages: Array.from(languages.entries())
-        .sort((a, b) => {
-          if (a[0] === "Unknown") return 1;
-          if (b[0] === "Unknown") return -1;
-          return a[0].localeCompare(b[0]);
-        })
-        .map(([language, count]) => ({ language, count })),
+      types: Array.from(types),
+      languages: Array.from(languages).sort((a, b) => {
+        if (a === "Unknown") return 1;
+        if (b === "Unknown") return -1;
+        return a.localeCompare(b);
+      }),
     };
   }, [resources]);
+
+  // Counts derived from countBase (search-filtered resources) so they update
+  // when the user types in the search box.
+  const filterCounts = React.useMemo(() => {
+    const sectionCounts = {};
+    const typeCounts = {};
+    const languageCounts = {};
+
+    countBase.forEach((resource) => {
+      if (resource.manifestoPart) {
+        const parts = Array.isArray(resource.manifestoPart)
+          ? resource.manifestoPart
+          : [resource.manifestoPart];
+        parts.forEach((part) => {
+          sectionCounts[part] = (sectionCounts[part] || 0) + 1;
+        });
+      }
+      if (resource.type) {
+        typeCounts[resource.type] = (typeCounts[resource.type] || 0) + 1;
+      }
+      const lang = resource.language || "Unknown";
+      languageCounts[lang] = (languageCounts[lang] || 0) + 1;
+    });
+
+    return { sectionCounts, typeCounts, languageCounts };
+  }, [countBase]);
 
   const toggleFilter = (category, value) => {
     const current = activeFilters[category] || [];
@@ -193,17 +212,23 @@ export function FilterSidebar({ resources, activeFilters, onFilterChange }) {
   };
 
   const clearAllFilters = () => {
-    onFilterChange({
-      frameworkSections: [],
-      types: [],
-      languages: [],
-    });
+    if (onClearAll) {
+      onClearAll();
+    } else {
+      onFilterChange({
+        frameworkSections: [],
+        types: [],
+        languages: [],
+        tags: [],
+      });
+    }
   };
 
   const hasActiveFilters =
     activeFilters.frameworkSections?.length > 0 ||
     activeFilters.types?.length > 0 ||
-    activeFilters.languages?.length > 0;
+    activeFilters.languages?.length > 0 ||
+    activeFilters.tags?.length > 0;
 
   return (
     <div className="w-full">
@@ -232,6 +257,13 @@ export function FilterSidebar({ resources, activeFilters, onFilterChange }) {
                 onRemove={() => removeFilter("languages", lang)}
               />
             ))}
+            {activeFilters.tags?.map((tag) => (
+              <ActiveFilterChip
+                key={`tag-${tag}`}
+                label={tag}
+                onRemove={() => removeFilter("tags", tag)}
+              />
+            ))}
           </div>
           <div className="flex justify-end">
             <button
@@ -250,27 +282,18 @@ export function FilterSidebar({ resources, activeFilters, onFilterChange }) {
         {/* Framework Section */}
         <FilterSection title="Framework Section" defaultOpen={true}>
           {filterOptions.frameworkSections.length > 0 ? (
-            filterOptions.frameworkSections.map((section) => {
-              const count = resources.filter((r) => {
-                const parts = Array.isArray(r.manifestoPart)
-                  ? r.manifestoPart
-                  : [r.manifestoPart];
-                return parts.includes(section);
-              }).length;
-
-              return (
-                <FilterCheckbox
-                  key={section}
-                  id={`framework-${section}`}
-                  label={formatFrameworkSectionName(section)}
-                  count={count}
-                  checked={
-                    activeFilters.frameworkSections?.includes(section) || false
-                  }
-                  onChange={() => toggleFilter("frameworkSections", section)}
-                />
-              );
-            })
+            filterOptions.frameworkSections.map((section) => (
+              <FilterCheckbox
+                key={section}
+                id={`framework-${section}`}
+                label={formatFrameworkSectionName(section)}
+                count={filterCounts.sectionCounts[section] || 0}
+                checked={
+                  activeFilters.frameworkSections?.includes(section) || false
+                }
+                onChange={() => toggleFilter("frameworkSections", section)}
+              />
+            ))
           ) : (
             <p
               className="text-text-quaternary px-2 py-1"
@@ -284,16 +307,23 @@ export function FilterSidebar({ resources, activeFilters, onFilterChange }) {
         {/* Type */}
         <FilterSection title="Type">
           {filterOptions.types.length > 0 ? (
-            filterOptions.types.map(({ type, count }) => (
-              <FilterCheckbox
-                key={type}
-                id={`type-${type}`}
-                label={formatTypeName(type)}
-                count={count}
-                checked={activeFilters.types?.includes(type) || false}
-                onChange={() => toggleFilter("types", type)}
-              />
-            ))
+            filterOptions.types
+              .slice()
+              .sort(
+                (a, b) =>
+                  (filterCounts.typeCounts[b] || 0) -
+                  (filterCounts.typeCounts[a] || 0)
+              )
+              .map((type) => (
+                <FilterCheckbox
+                  key={type}
+                  id={`type-${type}`}
+                  label={formatTypeName(type)}
+                  count={filterCounts.typeCounts[type] || 0}
+                  checked={activeFilters.types?.includes(type) || false}
+                  onChange={() => toggleFilter("types", type)}
+                />
+              ))
           ) : (
             <p
               className="text-text-quaternary px-2 py-1"
@@ -307,12 +337,12 @@ export function FilterSidebar({ resources, activeFilters, onFilterChange }) {
         {/* Language */}
         <FilterSection title="Language">
           {filterOptions.languages.length > 0 ? (
-            filterOptions.languages.map(({ language, count }) => (
+            filterOptions.languages.map((language) => (
               <FilterCheckbox
                 key={language}
                 id={`language-${language}`}
                 label={formatLanguageName(language)}
-                count={count}
+                count={filterCounts.languageCounts[language] || 0}
                 checked={activeFilters.languages?.includes(language) || false}
                 onChange={() => toggleFilter("languages", language)}
               />

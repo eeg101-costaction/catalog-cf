@@ -1,15 +1,12 @@
 "use client";
 
-import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import SearchBar from "@/components/ui/SearchBar";
 import { FilterSidebar } from "./FilterSidebar";
 import { ResourceCard } from "./ResourceCard";
 import { matchesFilters } from "@/lib/filterUtils";
 
-/**
- * Filter resources based on active filters
- */
 function filterResources(resources, activeFilters) {
   return resources.filter((resource) =>
     matchesFilters(resource, activeFilters),
@@ -18,96 +15,100 @@ function filterResources(resources, activeFilters) {
 
 export function ResourcesPageClient({ initialResources }) {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
-  const hasInitializedFiltersFromUrl = useRef(false);
-  const hasInitializedSearchFromUrl = useRef(false);
-  const [activeFilters, setActiveFilters] = useState({
-    frameworkSections: [],
-    types: [],
-    languages: [],
-    tags: [],
-  });
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
-  // Initialize search query from URL parameters
-  useEffect(() => {
-    const searchFromUrl = searchParams.get("search");
-    if (searchFromUrl) {
-      setSearchQuery(decodeURIComponent(searchFromUrl));
-    } else if (hasInitializedSearchFromUrl.current) {
-      // Only clear search if we've been initialized and search param is removed
-      setSearchQuery("");
-    }
-
-    // Get tag filters from URL
-    const tagsFromUrl = searchParams.getAll("tag");
-    if (tagsFromUrl.length > 0) {
-      const decodedTags = tagsFromUrl.map((tag) => decodeURIComponent(tag));
-      setActiveFilters((prev) => ({
-        ...prev,
-        tags: decodedTags,
-      }));
-    } else if (hasInitializedSearchFromUrl.current) {
-      // Clear tags if no tag params
-      setActiveFilters((prev) => ({
-        ...prev,
-        tags: [],
-      }));
-    }
-
-    hasInitializedSearchFromUrl.current = true;
-  }, [searchParams]);
-
-  useEffect(() => {
-    if (hasInitializedFiltersFromUrl.current) {
-      return;
-    }
-
-    const sectionFromAlias = searchParams.get("section");
-    const sectionFromQuery = searchParams.getAll("frameworkSection");
-
-    const allSections = Array.from(
-      new Set(
-        initialResources.flatMap((resource) =>
-          Array.isArray(resource.manifestoPart)
-            ? resource.manifestoPart
-            : resource.manifestoPart
-              ? [resource.manifestoPart]
-              : []
+  // All sections available in the dataset (for legacy ?section= alias resolution)
+  const allSections = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          initialResources.flatMap((r) =>
+            Array.isArray(r.manifestoPart)
+              ? r.manifestoPart
+              : r.manifestoPart
+                ? [r.manifestoPart]
+                : []
+          )
         )
-      )
-    );
+      ),
+    [initialResources]
+  );
 
-    let sectionsFromUrl = [];
+  // Derive activeFilters directly from URL — URL is the single source of truth.
+  // This ensures navigating to any ?tag=, ?type=, ?frameworkSection=, ?language= URL
+  // always produces the correct filter state without accumulation or stale refs.
+  const activeFilters = useMemo(() => {
+    const frameworkSectionsFromUrl = searchParams.getAll("frameworkSection");
+    const legacySection = searchParams.get("section");
 
-    if (sectionFromQuery.length > 0) {
-      sectionsFromUrl = sectionFromQuery.filter((section) =>
-        allSections.includes(section)
-      );
-    } else {
+    let resolvedSections = frameworkSectionsFromUrl;
+    if (frameworkSectionsFromUrl.length === 0 && legacySection) {
       const aliasToPattern = {
         part1: /^Part\s*1\b/i,
         part2: /^Part\s*2\b/i,
         part3: /^Part\s*3\b/i,
       };
-
-      const pattern = aliasToPattern[(sectionFromAlias || "").toLowerCase()];
+      const pattern = aliasToPattern[legacySection.toLowerCase()];
       if (pattern) {
-        sectionsFromUrl = allSections.filter((section) => pattern.test(section));
+        resolvedSections = allSections.filter((s) => pattern.test(s));
       }
     }
 
-    if (sectionsFromUrl.length > 0) {
-      setActiveFilters((previous) => ({
-        ...previous,
-        frameworkSections: sectionsFromUrl,
-      }));
-    }
+    return {
+      frameworkSections: resolvedSections,
+      types: searchParams.getAll("type"),
+      languages: searchParams.getAll("language"),
+      tags: searchParams.getAll("tag").map((t) => decodeURIComponent(t)),
+    };
+  }, [searchParams, allSections]);
 
-    hasInitializedFiltersFromUrl.current = true;
-  }, [searchParams, initialResources]);
+  // Search query kept in local state for responsive typing; synced from URL on navigation.
+  const [searchQuery, setSearchQuery] = useState(
+    () => decodeURIComponent(searchParams.get("search") || "")
+  );
+  useEffect(() => {
+    setSearchQuery(decodeURIComponent(searchParams.get("search") || ""));
+  }, [searchParams]);
+
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Build URLSearchParams from a filter object, preserving the current search query.
+  const buildParams = useCallback(
+    (newFilters) => {
+      const params = new URLSearchParams();
+      const currentSearch = searchParams.get("search");
+      if (currentSearch) params.set("search", currentSearch);
+      (newFilters.frameworkSections || []).forEach((s) =>
+        params.append("frameworkSection", s)
+      );
+      (newFilters.types || []).forEach((t) => params.append("type", t));
+      (newFilters.languages || []).forEach((l) => params.append("language", l));
+      (newFilters.tags || []).forEach((tag) =>
+        params.append("tag", encodeURIComponent(tag))
+      );
+      return params.toString();
+    },
+    [searchParams]
+  );
+
+  // Push new filter state to URL instead of updating React state directly.
+  const handleFilterChange = useCallback(
+    (newFilters) => {
+      const qs = buildParams(newFilters);
+      router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    },
+    [router, pathname, buildParams]
+  );
+
+  // Clear all filters by navigating to the page without any filter params.
+  const handleClearAllFilters = useCallback(() => {
+    const params = new URLSearchParams();
+    const currentSearch = searchParams.get("search");
+    if (currentSearch) params.set("search", currentSearch);
+    const qs = params.toString();
+    router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }, [router, pathname, searchParams]);
 
   // Force refresh data from Zotero
   const handleRefresh = useCallback(async () => {
@@ -132,35 +133,40 @@ export function ResourcesPageClient({ initialResources }) {
     }
   }, [router]);
 
-  // Apply filters to resources
+  // Resources matched by search text only — used for sidebar counts so that
+  // typing in the search box updates the counts without being distorted by
+  // the active facet filters.
+  const searchFilteredResources = useMemo(() => {
+    if (!searchQuery.trim()) return initialResources;
+    const lowerQuery = searchQuery.toLowerCase();
+    return initialResources.filter(
+      (resource) =>
+        resource.title?.toLowerCase().includes(lowerQuery) ||
+        resource.creators?.toLowerCase().includes(lowerQuery) ||
+        resource.abstract?.toLowerCase().includes(lowerQuery) ||
+        resource.tags?.some((tag) => tag.toLowerCase().includes(lowerQuery))
+    );
+  }, [initialResources, searchQuery]);
+
+  // Apply all active filters + search to produce the displayed resource list.
   const filteredResources = useMemo(() => {
-    // First apply category filters
     let results = filterResources(initialResources, activeFilters);
 
-    // Then apply search query
     if (searchQuery.trim()) {
       const lowerQuery = searchQuery.toLowerCase();
-      results = results.filter((resource) => {
-        const titleMatch = resource.title?.toLowerCase().includes(lowerQuery);
-        const creatorsMatch = resource.creators
-          ?.toLowerCase()
-          .includes(lowerQuery);
-        const abstractMatch = resource.abstract
-          ?.toLowerCase()
-          .includes(lowerQuery);
-        const tagsMatch = resource.tags?.some((tag) =>
-          tag.toLowerCase().includes(lowerQuery),
-        );
-
-        return titleMatch || creatorsMatch || abstractMatch || tagsMatch;
-      });
+      results = results.filter(
+        (resource) =>
+          resource.title?.toLowerCase().includes(lowerQuery) ||
+          resource.creators?.toLowerCase().includes(lowerQuery) ||
+          resource.abstract?.toLowerCase().includes(lowerQuery) ||
+          resource.tags?.some((tag) => tag.toLowerCase().includes(lowerQuery))
+      );
     }
 
-    // Sort by modification date (most recent first)
     results.sort((a, b) => {
       const dateA = new Date(a.dateModified || 0);
       const dateB = new Date(b.dateModified || 0);
-      return dateB - dateA; // Descending order (most recent first)
+      return dateB - dateA;
     });
 
     return results;
@@ -237,8 +243,10 @@ export function ResourcesPageClient({ initialResources }) {
             >
               <FilterSidebar
                 resources={initialResources}
+                countResources={searchFilteredResources}
                 activeFilters={activeFilters}
-                onFilterChange={setActiveFilters}
+                onFilterChange={handleFilterChange}
+                onClearAll={handleClearAllFilters}
               />
             </div>
           </div>
@@ -267,13 +275,7 @@ export function ResourcesPageClient({ initialResources }) {
                   No resources found matching the selected filters.
                 </p>
                 <button
-                  onClick={() =>
-                    setActiveFilters({
-                      frameworkSections: [],
-                      types: [],
-                      languages: [],
-                    })
-                  }
+                  onClick={handleClearAllFilters}
                   className="mt-4 text-text-link underline hover:text-text-primary transition-colors"
                   style={{ fontSize: "var(--font-size-small)" }}
                 >
