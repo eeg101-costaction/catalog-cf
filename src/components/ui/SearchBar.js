@@ -7,26 +7,23 @@ import { useState, useCallback } from "react";
  * Barre de recherche stylisée avec fond vert
  * Filtre les ressources par titre, auteurs, tags et abstract
  */
-export default function SearchBar({ resources = [], onSearch }) {
-  const [searchQuery, setSearchQuery] = useState("");
+export default function SearchBar({ resources = [], onSearch, value }) {
+  // If a controlled value is provided, use it; otherwise fall back to internal state.
+  const isControlled = value !== undefined;
+  const [internalQuery, setInternalQuery] = useState("");
+  const searchQuery = isControlled ? value : internalQuery;
 
   // Handle search input change
   const handleChange = (e) => {
     const query = e.target.value;
-    setSearchQuery(query);
-
-    // Call the parent callback with the search query
-    if (onSearch) {
-      onSearch(query);
-    }
+    if (!isControlled) setInternalQuery(query);
+    if (onSearch) onSearch(query);
   };
 
   // Handle clear button
   const handleClear = () => {
-    setSearchQuery("");
-    if (onSearch) {
-      onSearch("");
-    }
+    if (!isControlled) setInternalQuery("");
+    if (onSearch) onSearch("");
   };
 
   return (

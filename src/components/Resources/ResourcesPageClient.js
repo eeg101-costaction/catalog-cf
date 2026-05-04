@@ -101,14 +101,10 @@ export function ResourcesPageClient({ initialResources }) {
     [router, pathname, buildParams]
   );
 
-  // Clear all filters by navigating to the page without any filter params.
+  // Clear all filters AND the search query by navigating to the bare pathname.
   const handleClearAllFilters = useCallback(() => {
-    const params = new URLSearchParams();
-    const currentSearch = searchParams.get("search");
-    if (currentSearch) params.set("search", currentSearch);
-    const qs = params.toString();
-    router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-  }, [router, pathname, searchParams]);
+    router.push(pathname, { scroll: false });
+  }, [router, pathname]);
 
   // Force refresh data from Zotero
   const handleRefresh = useCallback(async () => {
@@ -183,7 +179,7 @@ export function ResourcesPageClient({ initialResources }) {
     <div className="flex flex-col mx-auto px-4 md:px-8 gap-24">
       {/* Search Bar */}
       <div className="mb-6">
-        <SearchBar resources={initialResources} onSearch={setSearchQuery} />
+        <SearchBar resources={initialResources} onSearch={setSearchQuery} value={searchQuery} />
       </div>
       <div className="flex flex-col lg:flex-row gap-16">
         {/* Left Sidebar - Filters */}
