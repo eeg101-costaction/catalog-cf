@@ -109,6 +109,22 @@ export function ResourcesPageClient({ initialResources }) {
     router.push(pathname, { scroll: false });
   }, [router, pathname]);
 
+  // Push the search query to the URL when the user commits (Enter / clear).
+  const handleSearchCommit = useCallback(
+    (query) => {
+      const params = new URLSearchParams(searchParams.toString());
+      // Remove all filter params, keeping only non-search ones
+      if (query) {
+        params.set("search", query);
+      } else {
+        params.delete("search");
+      }
+      const qs = params.toString();
+      router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    },
+    [router, pathname, searchParams]
+  );
+
   // Force refresh data from Zotero
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
@@ -182,7 +198,7 @@ export function ResourcesPageClient({ initialResources }) {
     <div className="flex flex-col mx-auto px-4 md:px-8 gap-24">
       {/* Search Bar */}
       <div className="mb-6">
-        <SearchBar resources={initialResources} onSearch={setSearchQuery} value={searchQuery} />
+        <SearchBar resources={initialResources} onSearch={setSearchQuery} onCommit={handleSearchCommit} value={searchQuery} />
       </div>
       <div className="flex flex-col lg:flex-row gap-16">
         {/* Left Sidebar - Filters */}

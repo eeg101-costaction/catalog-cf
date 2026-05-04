@@ -7,7 +7,7 @@ import { useState, useCallback } from "react";
  * Barre de recherche stylisée avec fond vert
  * Filtre les ressources par titre, auteurs, tags et abstract
  */
-export default function SearchBar({ resources = [], onSearch, value }) {
+export default function SearchBar({ resources = [], onSearch, onCommit, value }) {
   // If a controlled value is provided, use it; otherwise fall back to internal state.
   const isControlled = value !== undefined;
   const [internalQuery, setInternalQuery] = useState("");
@@ -20,10 +20,18 @@ export default function SearchBar({ resources = [], onSearch, value }) {
     if (onSearch) onSearch(query);
   };
 
+  // Commit on Enter key
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && onCommit) {
+      onCommit(searchQuery);
+    }
+  };
+
   // Handle clear button
   const handleClear = () => {
     if (!isControlled) setInternalQuery("");
     if (onSearch) onSearch("");
+    if (onCommit) onCommit("");
   };
 
   return (
@@ -49,6 +57,7 @@ export default function SearchBar({ resources = [], onSearch, value }) {
           placeholder="Search a resource..."
           value={searchQuery}
           onChange={handleChange}
+          onKeyDown={handleKeyDown}
           className="w-full pl-12 pr-10 py-3 text-gray-800 placeholder-gray-600 rounded-full outline-none transition-colors bg-[#BDD4F2] focus:bg-[#A8C5E8] focus:ring-2"
           aria-label="Search resources"
         />
