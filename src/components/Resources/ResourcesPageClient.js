@@ -101,8 +101,11 @@ export function ResourcesPageClient({ initialResources }) {
     [router, pathname, buildParams]
   );
 
-  // Clear all filters AND the search query by navigating to the bare pathname.
+  // Clear all filters AND the search query.
+  // Reset local search state immediately (the URL may already have no params,
+  // so router.push alone wouldn't trigger the searchParams useEffect).
   const handleClearAllFilters = useCallback(() => {
+    setSearchQuery("");
     router.push(pathname, { scroll: false });
   }, [router, pathname]);
 
