@@ -112,7 +112,7 @@ export async function GET(request) {
     try {
       // Only get subcollections if the requested keys are the main Parts
       const mainPartKeys = collectionKeys.filter((key) =>
-        ["F9DNTXQA", "ZD2RV8H9", "L72L5WAP"].includes(key)
+        ["JR7LCI93", "F9DNTXQA", "ZD2RV8H9", "L72L5WAP"].includes(key)
       );
       if (mainPartKeys.length > 0) {
         subcollectionsMap = await getSubcollectionsForParts(mainPartKeys);
