@@ -4,6 +4,7 @@ import {
   fetchItemsFromCollection,
   fetchCollections,
   getCollectionPath,
+  getSubcollectionsForParts,
 } from "@/lib/zotero/client";
 import { transformItem } from "@/lib/zotero/transform";
 import { unstable_cache } from "next/cache";
@@ -86,10 +87,26 @@ const getCachedResources = cache(
           console.warn("Could not fetch collections:", error.message);
         }
 
-        // Fetch and transform items from all three main collections in parallel
+        // Get subcollections for the three main parts
+        let subcollectionsMap = {};
+        try {
+          subcollectionsMap = await getSubcollectionsForParts(COLLECTION_KEYS);
+        } catch (error) {
+          console.warn("Could not fetch subcollections:", error.message);
+        }
+
+        // Build a list of all collection keys to fetch from (main parts + subcollections)
+        const allCollectionKeysToFetch = [
+          ...COLLECTION_KEYS,
+          ...Object.values(subcollectionsMap)
+            .flat()
+            .map((sub) => sub.key),
+        ];
+
+        // Fetch and transform items from all collections (main parts and subcollections) in parallel
         const allResources = (
           await Promise.all(
-            COLLECTION_KEYS.map(async (collectionKey) => {
+            allCollectionKeysToFetch.map(async (collectionKey) => {
               const rawItems = await fetchItemsFromCollection(collectionKey, {
                 limit: 10000, // Fetch all items per collection
               });
@@ -103,7 +120,7 @@ const getCachedResources = cache(
                     COLLECTION_KEYS
                   );
 
-                  // If we got a collection path, use it; otherwise use the parent collection name
+                  // If we got a collection path, use it; otherwise use the current collection name
                   const manifestoPart =
                     collectionPath.length > 0
                       ? collectionPath

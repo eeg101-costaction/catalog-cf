@@ -15,9 +15,11 @@ import { NextResponse } from "next/server";
 import {
   fetchItemsFromCollection,
   fetchCollections,
+  getCollectionPath,
+  getSubcollectionsForParts,
 } from "@/lib/zotero/client";
 import {
-  transformItems,
+  transformItem,
   groupByFamily,
   getResourceStats,
   prepareForCard,
@@ -90,29 +92,74 @@ export async function GET(request) {
     const collectionKeys = collectionParam.split(",").map((k) => k.trim());
 
     // Get collection info to include the name in transformed items
-    let collections = [];
+    let collectionMap = {};
     let collectionNames = {};
     try {
-      collections = await fetchCollections();
+      const allCollections = await fetchCollections();
+      allCollections.forEach((collection) => {
+        collectionMap[collection.key] = collection;
+      });
       collectionKeys.forEach((key) => {
-        const collection = collections.find((c) => c.key === key);
+        const collection = collectionMap[key];
         if (collection) collectionNames[key] = collection.name;
       });
     } catch (error) {
-      console.warn("Could not fetch collection names:", error.message);
+      console.warn("Could not fetch collection info:", error.message);
     }
+
+    // Get subcollections for the requested collections (if they are Part collections)
+    let subcollectionsMap = {};
+    try {
+      // Only get subcollections if the requested keys are the main Parts
+      const mainPartKeys = collectionKeys.filter((key) =>
+        ["F9DNTXQA", "ZD2RV8H9", "L72L5WAP"].includes(key)
+      );
+      if (mainPartKeys.length > 0) {
+        subcollectionsMap = await getSubcollectionsForParts(mainPartKeys);
+      }
+    } catch (error) {
+      console.warn("Could not fetch subcollections:", error.message);
+    }
+
+    // Build a list of all collection keys to fetch from (requested + subcollections)
+    const allCollectionKeysToFetch = [
+      ...collectionKeys,
+      ...Object.values(subcollectionsMap)
+        .flat()
+        .map((sub) => sub.key),
+    ];
 
     // Fetch and transform items from all collections in parallel
     const allResources = (
       await Promise.all(
-        collectionKeys.map(async (collectionKey) => {
+        allCollectionKeysToFetch.map(async (collectionKey) => {
           const rawItems = await fetchItemsFromCollection(collectionKey, {
             limit: 10000, // Fetch all items per collection
           });
-          return transformItems(rawItems, {
-            collectionName: collectionNames[collectionKey] || "",
-            collectionKey,
-          });
+
+          // For each item, get its full collection path (including subcollections)
+          const resourcesWithPaths = await Promise.all(
+            rawItems.map(async (rawItem) => {
+              const collectionPath = await getCollectionPath(
+                rawItem.key,
+                collectionMap,
+                ["F9DNTXQA", "ZD2RV8H9", "L72L5WAP"]
+              );
+
+              // If we got a collection path, use it; otherwise use the current collection name
+              const manifestoPart =
+                collectionPath.length > 0
+                  ? collectionPath
+                  : collectionMap[collectionKey]?.name || "";
+
+              return transformItem(rawItem, {
+                collectionName: manifestoPart,
+                collectionKey,
+              });
+            })
+          );
+
+          return resourcesWithPaths;
         })
       )
     ).flat();
