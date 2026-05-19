@@ -189,10 +189,7 @@ export function ResourcesPageClient({ initialResources }) {
 
   // Format count display
   const resultCount = filteredResources.length;
-  const resultText =
-    resultCount > 99
-      ? "+99 results"
-      : `${resultCount} result${resultCount !== 1 ? "s" : ""}`;
+  const resultText = `${resultCount} result${resultCount !== 1 ? "s" : ""}`;
 
   return (
     <div className="flex flex-col mx-auto px-4 md:px-8 gap-24">
