@@ -10,7 +10,7 @@ import { transformItem } from "@/lib/zotero/transform";
 import { unstable_cache } from "next/cache";
 import { cache, Suspense } from "react";
 
-const COLLECTION_KEYS = ["F9DNTXQA", "ZD2RV8H9", "L72L5WAP"];
+const COLLECTION_KEYS = ["JR7LCI93", "F9DNTXQA", "ZD2RV8H9", "L72L5WAP"];
 
 // Enable static generation for instant page loads
 export const revalidate = 3600; // Revalidate cache every hour
