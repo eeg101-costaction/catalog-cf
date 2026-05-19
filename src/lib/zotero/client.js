@@ -338,3 +338,70 @@ export async function getCollectionPath(itemKey, collectionMap, partKeys) {
     return [];
   }
 }
+
+/**
+ * Get the collection path for an item using data already in the item object
+ *
+ * This is the optimized version - it doesn't make API calls.
+ * Uses the item's collections array (from item.data.collections) and the collection map
+ * to build the path, avoiding the need to fetch collections per-item.
+ *
+ * @param {Object} rawItem - The raw Zotero item object with data.collections array
+ * @param {Object} collectionMap - All collections keyed by key (from fetchCollections)
+ * @param {Array<string>} partKeys - The keys of the three Part collections
+ * @returns {Array<string>} Array of collection names from parent to child
+ */
+export function getCollectionPathFromItemData(
+  rawItem,
+  collectionMap,
+  partKeys
+) {
+  try {
+    // Get collection keys from the item's data
+    const itemData = rawItem.data || rawItem;
+    const collectionKeys = itemData.collections || [];
+
+    if (collectionKeys.length === 0) {
+      return [];
+    }
+
+    // Find a collection that is either a Part or a subcollection of a Part
+    const relevantCollectionKey = collectionKeys.find((key) => {
+      const collection = collectionMap[key];
+      if (!collection) return false;
+
+      return (
+        partKeys.includes(key) || partKeys.includes(collection.parentCollection)
+      );
+    });
+
+    if (!relevantCollectionKey) {
+      return [];
+    }
+
+    const relevantCollection = collectionMap[relevantCollectionKey];
+    if (!relevantCollection) {
+      return [];
+    }
+
+    // Build the path from parent to child
+    const path = [];
+
+    // If this collection is a subcollection, add its parent (the Part)
+    if (relevantCollection.parentCollection) {
+      const parentKey = relevantCollection.parentCollection;
+      const parentCollection = collectionMap[parentKey];
+      if (parentCollection) {
+        path.push(parentCollection.name);
+      }
+    }
+
+    // Add the collection itself
+    path.push(relevantCollection.name);
+
+    return path;
+  } catch (error) {
+    console.error("Error getting collection path from item data:", error.message);
+    return [];
+  }
+}

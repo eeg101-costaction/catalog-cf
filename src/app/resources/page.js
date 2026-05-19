@@ -3,7 +3,7 @@ import { ResourcesPageClient } from "@/components/Resources/ResourcesPageClient"
 import {
   fetchItemsFromCollection,
   fetchCollections,
-  getCollectionPath,
+  getCollectionPathFromItemData,
   getSubcollectionsForParts,
 } from "@/lib/zotero/client";
 import { transformItem } from "@/lib/zotero/transform";
@@ -112,26 +112,24 @@ const getCachedResources = cache(
               });
 
               // For each item, get its full collection path (including subcollections)
-              const resourcesWithPaths = await Promise.all(
-                rawItems.map(async (rawItem) => {
-                  const collectionPath = await getCollectionPath(
-                    rawItem.key,
-                    collectionMap,
-                    COLLECTION_KEYS
-                  );
+              const resourcesWithPaths = rawItems.map((rawItem) => {
+                const collectionPath = getCollectionPathFromItemData(
+                  rawItem,
+                  collectionMap,
+                  COLLECTION_KEYS
+                );
 
-                  // If we got a collection path, use it; otherwise use the current collection name
-                  const manifestoPart =
-                    collectionPath.length > 0
-                      ? collectionPath
-                      : collectionMap[collectionKey]?.name || "";
+                // If we got a collection path, use it; otherwise use the current collection name
+                const manifestoPart =
+                  collectionPath.length > 0
+                    ? collectionPath
+                    : collectionMap[collectionKey]?.name || "";
 
-                  return transformItem(rawItem, {
-                    collectionName: manifestoPart,
-                    collectionKey,
-                  });
-                })
-              );
+                return transformItem(rawItem, {
+                  collectionName: manifestoPart,
+                  collectionKey,
+                });
+              });
 
               return resourcesWithPaths;
             })

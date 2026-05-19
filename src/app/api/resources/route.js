@@ -15,7 +15,7 @@ import { NextResponse } from "next/server";
 import {
   fetchItemsFromCollection,
   fetchCollections,
-  getCollectionPath,
+  getCollectionPathFromItemData,
   getSubcollectionsForParts,
 } from "@/lib/zotero/client";
 import {
@@ -138,26 +138,24 @@ export async function GET(request) {
           });
 
           // For each item, get its full collection path (including subcollections)
-          const resourcesWithPaths = await Promise.all(
-            rawItems.map(async (rawItem) => {
-              const collectionPath = await getCollectionPath(
-                rawItem.key,
-                collectionMap,
-                ["F9DNTXQA", "ZD2RV8H9", "L72L5WAP"]
-              );
+          const resourcesWithPaths = rawItems.map((rawItem) => {
+            const collectionPath = getCollectionPathFromItemData(
+              rawItem,
+              collectionMap,
+              ["F9DNTXQA", "ZD2RV8H9", "L72L5WAP"]
+            );
 
-              // If we got a collection path, use it; otherwise use the current collection name
-              const manifestoPart =
-                collectionPath.length > 0
-                  ? collectionPath
-                  : collectionMap[collectionKey]?.name || "";
+            // If we got a collection path, use it; otherwise use the current collection name
+            const manifestoPart =
+              collectionPath.length > 0
+                ? collectionPath
+                : collectionMap[collectionKey]?.name || "";
 
-              return transformItem(rawItem, {
-                collectionName: manifestoPart,
-                collectionKey,
-              });
-            })
-          );
+            return transformItem(rawItem, {
+              collectionName: manifestoPart,
+              collectionKey,
+            });
+          });
 
           return resourcesWithPaths;
         })
