@@ -142,7 +142,7 @@ export async function GET(request) {
             const collectionPath = getCollectionPathFromItemData(
               rawItem,
               collectionMap,
-              ["F9DNTXQA", "ZD2RV8H9", "L72L5WAP"]
+              ["JR7LCI93", "F9DNTXQA", "ZD2RV8H9", "L72L5WAP"]
             );
 
             // If we got a collection path, use it; otherwise use the current collection name
