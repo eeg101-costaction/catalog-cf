@@ -231,3 +231,110 @@ export async function searchItems(query, options = {}) {
     throw new Error(`Failed to search items: ${error.message}`);
   }
 }
+
+/**
+ * Get subcollections for the three main Part collections
+ *
+ * This fetches all collections and filters to only include subcollections
+ * that are nested directly under the three hardcoded Part collections
+ * (F9DNTXQA, ZD2RV8H9, L72L5WAP).
+ *
+ * @param {Array<string>} partKeys - The keys of the three Part collections
+ * @returns {Promise<Object>} Map of part key to array of subcollections
+ *   Example: {
+ *     'F9DNTXQA': [
+ *       { key: 'ABC123', name: 'Epistemology' },
+ *       { key: 'XYZ789', name: 'Ethics' }
+ *     ]
+ *   }
+ */
+export async function getSubcollectionsForParts(partKeys) {
+  try {
+    const allCollections = await fetchCollections();
+    const subcollectionsMap = {};
+
+    // Initialize map for each part
+    partKeys.forEach((key) => {
+      subcollectionsMap[key] = [];
+    });
+
+    // Filter collections to only those that are subcollections of the parts
+    allCollections.forEach((collection) => {
+      if (partKeys.includes(collection.parentCollection)) {
+        if (!subcollectionsMap[collection.parentCollection]) {
+          subcollectionsMap[collection.parentCollection] = [];
+        }
+        subcollectionsMap[collection.parentCollection].push({
+          key: collection.key,
+          name: collection.name,
+          parentCollection: collection.parentCollection,
+        });
+      }
+    });
+
+    return subcollectionsMap;
+  } catch (error) {
+    console.error("Error getting subcollections for parts:", error.message);
+    return {};
+  }
+}
+
+/**
+ * Get the full collection path for an item
+ *
+ * This builds an array of collection names from parent to child.
+ * For example, if an item is in "Epistemology" which is under "Part 1: Validity",
+ * it returns ['Part 1: Validity', 'Epistemology'].
+ *
+ * Only includes collections that are under the three main Parts (F9DNTXQA, ZD2RV8H9, L72L5WAP).
+ *
+ * @param {string} itemKey - The key of the item
+ * @param {Object} collectionMap - All collections keyed by key
+ * @param {Array<string>} partKeys - The keys of the three Part collections
+ * @returns {Promise<Array<string>>} Array of collection names from parent to child
+ */
+export async function getCollectionPath(itemKey, collectionMap, partKeys) {
+  try {
+    // Get all collections this item belongs to
+    const itemCollections = await fetchItemCollections(itemKey);
+
+    if (itemCollections.length === 0) {
+      return [];
+    }
+
+    // Find the collection that is either a Part or a subcollection of a Part
+    const relevantCollection = itemCollections.find((collection) => {
+      return (
+        partKeys.includes(collection.key) ||
+        partKeys.includes(collection.parentCollection)
+      );
+    });
+
+    if (!relevantCollection) {
+      return [];
+    }
+
+    // Build the path from parent to child
+    const path = [];
+
+    // If this collection is a subcollection, add its parent (the Part)
+    if (relevantCollection.parentCollection) {
+      const parentKey = relevantCollection.parentCollection;
+      const parentCollection = collectionMap[parentKey];
+      if (parentCollection) {
+        path.push(parentCollection.name);
+      }
+    }
+
+    // Add the collection itself
+    path.push(relevantCollection.name);
+
+    return path;
+  } catch (error) {
+    console.error(
+      `Error getting collection path for item ${itemKey}:`,
+      error.message
+    );
+    return [];
+  }
+}

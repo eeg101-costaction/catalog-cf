@@ -3,8 +3,9 @@ import { ResourcesPageClient } from "@/components/Resources/ResourcesPageClient"
 import {
   fetchItemsFromCollection,
   fetchCollections,
+  getCollectionPath,
 } from "@/lib/zotero/client";
-import { transformItems } from "@/lib/zotero/transform";
+import { transformItem } from "@/lib/zotero/transform";
 import { unstable_cache } from "next/cache";
 import { cache, Suspense } from "react";
 
@@ -74,29 +75,48 @@ const getCachedResources = cache(
       const startTime = Date.now();
 
       try {
-        // Get collection info
-        let collectionNames = {};
+        // Get all collections and build a map for lookup
+        let collectionMap = {};
         try {
           const collections = await fetchCollections();
-          COLLECTION_KEYS.forEach((key) => {
-            const collection = collections.find((c) => c.key === key);
-            if (collection) collectionNames[key] = collection.name;
+          collections.forEach((collection) => {
+            collectionMap[collection.key] = collection;
           });
         } catch (error) {
-          console.warn("Could not fetch collection names:", error.message);
+          console.warn("Could not fetch collections:", error.message);
         }
 
-        // Fetch and transform items from all collections in parallel
+        // Fetch and transform items from all three main collections in parallel
         const allResources = (
           await Promise.all(
             COLLECTION_KEYS.map(async (collectionKey) => {
               const rawItems = await fetchItemsFromCollection(collectionKey, {
                 limit: 10000, // Fetch all items per collection
               });
-              return transformItems(rawItems, {
-                collectionName: collectionNames[collectionKey] || "",
-                collectionKey,
-              });
+
+              // For each item, get its full collection path (including subcollections)
+              const resourcesWithPaths = await Promise.all(
+                rawItems.map(async (rawItem) => {
+                  const collectionPath = await getCollectionPath(
+                    rawItem.key,
+                    collectionMap,
+                    COLLECTION_KEYS
+                  );
+
+                  // If we got a collection path, use it; otherwise use the parent collection name
+                  const manifestoPart =
+                    collectionPath.length > 0
+                      ? collectionPath
+                      : collectionMap[collectionKey]?.name || "";
+
+                  return transformItem(rawItem, {
+                    collectionName: manifestoPart,
+                    collectionKey,
+                  });
+                })
+              );
+
+              return resourcesWithPaths;
             })
           )
         ).flat();
