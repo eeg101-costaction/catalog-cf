@@ -326,6 +326,22 @@ export function transformItem(rawItem, options = {}) {
     resource.doi = data.DOI;
   }
 
+  // Extract related item keys from Zotero relations field
+  // The dc:relation field contains URLs like "http://zotero.org/groups/.../items/ITEMKEY"
+  const dcRelation = data.relations?.["dc:relation"];
+  if (dcRelation) {
+    const relationUrls = Array.isArray(dcRelation) ? dcRelation : [dcRelation];
+    const relatedIds = relationUrls
+      .map((url) => {
+        const match = url.match(/\/items\/([A-Z0-9]+)$/);
+        return match ? match[1] : null;
+      })
+      .filter(Boolean);
+    if (relatedIds.length > 0) {
+      resource.relatedIds = relatedIds;
+    }
+  }
+
   // Add abstract (full and truncated for card preview)
   if (data.abstractNote) {
     resource.abstract = data.abstractNote;

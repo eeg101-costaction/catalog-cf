@@ -1,11 +1,12 @@
 import { fetchItem, fetchItemCollections } from "@/lib/zotero/client";
-import { transformItem, prepareForDetail } from "@/lib/zotero/transform";
+import { transformItem, prepareForDetail, prepareForCard } from "@/lib/zotero/transform";
 import ResourceDetail from "@/components/Resources/ResourceDetail";
 
 export default async function ResourceDetailPage({ params }) {
   const { id } = await params;
 
   let resource = null;
+  let relatedResources = [];
   let error = null;
 
   try {
@@ -25,6 +26,16 @@ export default async function ResourceDetailPage({ params }) {
     });
 
     resource = prepareForDetail(transformedItem);
+
+    // Fetch related resources in parallel, silently skip any that fail
+    if (resource.relatedIds && resource.relatedIds.length > 0) {
+      const relatedRaws = await Promise.all(
+        resource.relatedIds.map((key) => fetchItem(key).catch(() => null))
+      );
+      relatedResources = relatedRaws
+        .filter(Boolean)
+        .map((raw) => prepareForCard(transformItem(raw)));
+    }
   } catch (err) {
     error = err;
   }
@@ -42,5 +53,5 @@ export default async function ResourceDetailPage({ params }) {
     );
   }
 
-  return <ResourceDetail resource={resource} />;
+  return <ResourceDetail resource={resource} relatedResources={relatedResources} />;
 }

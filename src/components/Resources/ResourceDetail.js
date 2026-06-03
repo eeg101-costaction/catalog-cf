@@ -57,7 +57,7 @@ const getPledgeUrl = (manifestoPart) => {
   return null;
 };
 
-export default function ResourceDetail({ resource }) {
+export default function ResourceDetail({ resource, relatedResources = [] }) {
   const router = useRouter();
 
   // Scroll to section handler
@@ -338,6 +338,73 @@ export default function ResourceDetail({ resource }) {
             );
           })}
         </section>
+
+        {/* Related Resources */}
+        {relatedResources.length > 0 && (
+          <section id="related-resources" className="mb-12">
+            <h2
+              className="mb-6"
+              style={{
+                fontSize: "var(--font-size-h3)",
+                fontWeight: 700,
+                color: "var(--text-primary)",
+              }}
+            >
+              Related Resources
+            </h2>
+            <ul
+              style={{
+                listStyle: "none",
+                padding: 0,
+                margin: 0,
+                display: "flex",
+                flexDirection: "column",
+                gap: "0.75rem",
+              }}
+            >
+              {relatedResources.map((related) => (
+                <li key={related.id}>
+                  <Link
+                    href={`/resources/${related.id}`}
+                    className="flex items-center justify-between gap-4 px-4 py-3 rounded-lg hover:opacity-80 transition-opacity"
+                    style={{
+                      background: "var(--surface-secondary)",
+                      border: "var(--separator-light)",
+                      textDecoration: "none",
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: "var(--font-size-small)",
+                        color: "var(--text-primary)",
+                        fontWeight: 500,
+                        flex: 1,
+                        minWidth: 0,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {related.title}
+                    </span>
+                    <Tags
+                      labels={[
+                        {
+                          label:
+                            related.type.charAt(0).toUpperCase() +
+                            related.type.slice(1).replace(/([A-Z])/g, " $1"),
+                        },
+                      ]}
+                      variant="resource-type"
+                      themeColor={related.themeColor || "grey"}
+                      textSize="caption"
+                    />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
       </main>
 
       {/* Table of Contents Sidebar */}
@@ -445,6 +512,28 @@ export default function ResourceDetail({ resource }) {
                   }
                 >
                   Sign the Pledge
+                </button>
+              </li>
+            )}
+
+            {/* Related Resources Link */}
+            {relatedResources.length > 0 && (
+              <li>
+                <button
+                  onClick={() => scrollToSection("related-resources")}
+                  className="w-full text-left py-2 bg-transparent border-0 cursor-pointer font-normal transition-colors duration-[var(--transition-fast)]"
+                  style={{
+                    fontSize: "var(--font-size-small)",
+                    color: "var(--text-primary)",
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.target.style.color = "var(--text-link)")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.target.style.color = "var(--text-primary)")
+                  }
+                >
+                  Related Resources
                 </button>
               </li>
             )}
