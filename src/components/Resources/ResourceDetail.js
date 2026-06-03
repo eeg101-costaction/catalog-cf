@@ -286,58 +286,6 @@ export default function ResourceDetail({ resource, relatedResources = [] }) {
 
         {/* Action Buttons */}
         <section id="actions" className="flex flex-col gap-6 flex-wrap">
-          {/* Modified date */}
-          {resource.dateModified && (
-            <p
-              style={{
-                fontSize: "var(--font-size-caption)",
-                color: "var(--text-tertiary)",
-              }}
-            >
-              Last modified in Zotero: {new Date(resource.dateModified).toLocaleDateString()}
-            </p>
-          )}
-
-          {/* Origin Source Button */}
-          {originUrl && (
-            <div id="origin-sources">
-              <OriginSourceButton
-                onClick={() => window.open(originUrl, "_blank")}
-              >
-                Origin Sources
-              </OriginSourceButton>
-            </div>
-          )}
-
-          {/* Zotero Link Button */}
-          {zoteroUrl && (
-            <div id="zotero-link">
-              <ZoteroLinkButton
-                onClick={() => window.open(zoteroUrl, "_blank")}
-              >
-                View in Zotero
-              </ZoteroLinkButton>
-            </div>
-          )}
-
-          {/* Sign Pledge Buttons */}
-          {manifestoParts.map((part, idx) => {
-            const pledgeUrl = getPledgeUrl(part);
-            if (!pledgeUrl) return null;
-
-            const sectionName = extractSectionName(part);
-
-            return (
-              <div key={idx} id={idx === 0 ? "sign-pledge" : undefined}>
-                <SignPledgeButton
-                  onClick={() => window.open(pledgeUrl, "_blank")}
-                >
-                  Sign {sectionName} Part
-                </SignPledgeButton>
-              </div>
-            );
-          })}
-        </section>
 
         {/* Related Resources */}
         {relatedResources.length > 0 && (
@@ -405,6 +353,58 @@ export default function ResourceDetail({ resource, relatedResources = [] }) {
             </ul>
           </section>
         )}
+        {/* Modified date */}
+          {resource.dateModified && (
+            <p
+              style={{
+                fontSize: "var(--font-size-caption)",
+                color: "var(--text-tertiary)",
+              }}
+            >
+              Last modified in Zotero: {new Date(resource.dateModified).toLocaleDateString()}
+            </p>
+          )}
+
+          {/* Origin Source Button */}
+          {originUrl && (
+            <div id="origin-sources">
+              <OriginSourceButton
+                onClick={() => window.open(originUrl, "_blank")}
+              >
+                Origin Sources
+              </OriginSourceButton>
+            </div>
+          )}
+
+          {/* Zotero Link Button */}
+          {zoteroUrl && (
+            <div id="zotero-link">
+              <ZoteroLinkButton
+                onClick={() => window.open(zoteroUrl, "_blank")}
+              >
+                View in Zotero
+              </ZoteroLinkButton>
+            </div>
+          )}
+
+          {/* Sign Pledge Buttons */}
+          {manifestoParts.map((part, idx) => {
+            const pledgeUrl = getPledgeUrl(part);
+            if (!pledgeUrl) return null;
+
+            const sectionName = extractSectionName(part);
+
+            return (
+              <div key={idx} id={idx === 0 ? "sign-pledge" : undefined}>
+                <SignPledgeButton
+                  onClick={() => window.open(pledgeUrl, "_blank")}
+                >
+                  Sign {sectionName} Part
+                </SignPledgeButton>
+              </div>
+            );
+          })}
+        </section>
       </main>
 
       {/* Table of Contents Sidebar */}
