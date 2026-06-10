@@ -11,11 +11,11 @@ import { ZOTERO_GROUP_ID } from "@/lib/zotero/constants";
 // Manifesto part URL mapping
 const MANIFESTO_URLS = {
   "Part 1: Validity & Integrity":
-    "https://cuttingeeg.github.io/EEG101CommunityFramework/#validity-and-scientific-integrity-in-times-of-rapidly-evolving-practices",
+    "https://sign-cf.eeg101.eu/#validity-and-scientific-integrity-in-times-of-rapidly-evolving-practices",
   "Part 2: Democratization":
-    "https://cuttingeeg.github.io/EEG101CommunityFramework/#democratization-the-importance-of-diversity-and-inclusion-to-support-the-development-of-eeg-science",
+    "https://sign-cf.eeg101.eu/#democratization-the-importance-of-diversity-and-inclusion-to-support-the-development-of-eeg-science",
   "Part 3: Responsibility":
-    "https://cuttingeeg.github.io/EEG101CommunityFramework/#responsibility-considering-societal-impacts-issues-of-equity-and-sustainability",
+    "https://sign-cf.eeg101.eu/#responsibility-considering-societal-impacts-issues-of-equity-and-sustainability",
 };
 
 // Extract section name from manifestoPart
