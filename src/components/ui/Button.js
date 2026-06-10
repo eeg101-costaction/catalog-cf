@@ -33,7 +33,7 @@ export function SignFrameworkButton({
 }) {
   const handleClick = () => {
     window.open(
-      "https://cuttingeeg.github.io/EEG101CommunityFramework/",
+      "https://sign-cf.eeg101.eu/",
       "_blank",
     );
     if (onClick) onClick();
