@@ -8,7 +8,7 @@ export const ResourceCard = React.memo(function ResourceCard({ resource }) {
     resource.creators ||
     resource.websiteName ||
     resource.websiteTitle ||
-    "Unknown";
+    "";
   const manifesto = resource.manifestoPart || "";
   const type = resource.type || "";
 
