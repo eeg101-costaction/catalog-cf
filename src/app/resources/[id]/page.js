@@ -2,6 +2,31 @@ import { fetchItem, fetchItemCollections } from "@/lib/zotero/client";
 import { transformItem, prepareForDetail, prepareForCard } from "@/lib/zotero/transform";
 import ResourceDetail from "@/components/Resources/ResourceDetail";
 
+export async function generateMetadata({ params }) {
+  const { id } = await params;
+
+  try {
+    const rawItem = await fetchItem(id);
+    const collections = await fetchItemCollections(id);
+    const firstCollectionKey = collections.length > 0 ? collections[0].key : undefined;
+
+    const transformedItem = transformItem(rawItem, {
+      collectionName: collections.length > 0 ? collections.map((c) => c.name) : undefined,
+      collectionKey: firstCollectionKey,
+    });
+
+    const resource = prepareForDetail(transformedItem);
+
+    return {
+      title: resource.title,
+    };
+  } catch (err) {
+    return {
+      title: "Resource",
+    };
+  }
+}
+
 export default async function ResourceDetailPage({ params }) {
   const { id } = await params;
 
